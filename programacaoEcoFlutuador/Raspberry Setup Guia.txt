@@ -34,6 +34,7 @@ CONECTAR NO VNC VIEWER:
 PASSO 1 — Com a RPi conectada no WiFi do PC, adicionar a rede da ESP32:
   nmcli dev wifi connect "ESP32-EcoFlutuador" password "12345678" ifname wlan0
 
+
 PASSO 2 — Fixar IP via GUI:
   > Clique no ícone WiFi > Advanced Options > Edit Connections
   > Selecione ESP32-EcoFlutuador > IPv4 Settings
@@ -82,7 +83,7 @@ COMANDOS ÚTEIS
 
   # Verificar autoconnect
   nmcli connection show "ESP32-EcoFlutuador" | grep autoconnect
-
+ 
 *********************************************
 3) SETUP PROGRAMAÇÃO
 *********************************************
@@ -102,13 +103,14 @@ PASSO 3 - Checar a conexão da Webcam
 PASSO 4 - Criar o arquivo do Script Python
     nano ~/stream_camera.py
 *********************************************
+
 from flask import Flask, Response
 import cv2
 
 app = Flask(__name__)
 
 def gerar_frames():
-    cam = cv2.VideoCapture('dev/video0')
+    cam = cv2.VideoCapture('/dev/video0')
     cam.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     cam.set(cv2.CAP_PROP_FPS, 15)
@@ -148,6 +150,107 @@ User=eco
 
 [Install]
 WantedBy=multi-user.target
+
 *********************************************
-PASSO 6 - Ativar o serviço
+COMO TESTAR?
+
+sudo systemctl enable ecoflutuador-cam
+sudo systemctl start ecoflutuador-cam
+python3 stream_camera.py
+http://(IP DA RPI):5000/stream
+
+*********************************************
+
+PASSO 6 - Atualizar o HTML da ESP32
+
+Substituir a função paginaHTML() pelo código:
+
+String paginaHTML(){
+  // Coloque o IP do seu Raspberry Pi aqui
+ String streamUrl = "http://192.168.4.2/stream";
+  
+  return R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EcoFlutuador</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { text-align: center; font-family: Arial; background: #1a1a2e; color: white; }
+    h2 { margin: 10px; }
+    #videoStream {
+      width: 100%;
+      max-width: 640px;
+      border: 2px solid #00d4ff;
+      border-radius: 8px;
+      background: #000;
+    }
+    .controles { margin-top: 15px; }
+    button {
+      width: 80px; height: 80px;
+      margin: 5px; font-size: 16px;
+      background: #0f3460; color: white;
+      border: 1px solid #00d4ff; border-radius: 8px;
+      cursor: pointer;
+    }
+    button:active { background: #00d4ff; color: black; }
+    #status { font-size: 12px; color: #aaa; margin: 5px; }
+  </style>
+</head>
+<body>
+  <h2>🚤 EcoFlutuador</h2>
+
+  <img id="videoStream" src=")rawliteral" + streamUrl + R"rawliteral(" 
+       onerror="streamErro()" onload="streamOk()">
+  <div id="status">Conectando ao stream...</div>
+
+  <div class="controles">
+    <button ontouchstart="mover('w')" ontouchend="mover('s')" onclick="mover('w')">▲<br>Frente</button><br>
+    <button ontouchstart="mover('q')" ontouchend="mover('s')" onclick="mover('q')">↺<br>Gir E</button>
+    <button ontouchstart="mover('a')" ontouchend="mover('s')" onclick="mover('a')">◀<br>Esq</button>
+    <button onclick="mover('s')">⏹<br>Parar</button>
+    <button ontouchstart="mover('d')" ontouchend="mover('s')" onclick="mover('d')">▶<br>Dir</button>
+    <button ontouchstart="mover('e')" ontouchend="mover('s')" onclick="mover('e')">↻<br>Gir D</button>
+  </div>
+
+  <script>
+    function mover(cmd){
+      fetch('/move?cmd=' + cmd);
+    }
+    function streamOk(){
+      document.getElementById('status').innerText = '🟢 Stream ativo';
+    }
+    function streamErro(){
+      document.getElementById('status').innerText = '🔴 Stream offline — verifique o Raspberry Pi';
+    }
+  </script>
+</body>
+</html>
+)rawliteral";
+}
+
+*********************************************
+4) TRANSMISSÃO DA IMAGEM VIA CABO
+*********************************************
+
+PASSO 1 - instalar nginx
+    sudo apt install nginx
+
+PASSO 2 - configurar o nginx
+    sudo nano /etc/nginx/sites-available/default
+
+    Substitui o server default por:
+
+    server {
+    listen 80;
+
+    location /stream {
+        proxy_pass http://localhost:5000/?action=stream;
+        proxy_buffering off;
+    }
+}
+
+PASSO 3 - Reniciar o nginx
+    sudo systemctl restart nginx
+
 
