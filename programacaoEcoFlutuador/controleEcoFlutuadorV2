@@ -70,7 +70,7 @@ void executarComando(char cmd){
 
 String paginaHTML(){
   // Coloque o IP do seu Raspberry Pi aqui
- String streamUrl = "http://192.168.4.1/stream";
+ String streamUrl = "http://192.168.4.2/stream";
   
   return R"rawliteral(
 <!DOCTYPE html>
