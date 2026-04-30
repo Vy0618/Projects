@@ -4,7 +4,7 @@
 #include <ESP32Servo.h>
 
 
-const char* ssid = "ESP32-EcoFlutuador";
+const char* ssid = "rpi-ecoflutuador";
 const char* password = "12345678";
 
 WebServer server(80);
@@ -15,8 +15,6 @@ WebServer server(80);
 
 Servo esc1;
 Servo esc2;
-
-
 
 int pctParaMicro(int pct) {
   pct = constrain(pct, 0, 100);
@@ -142,8 +140,10 @@ void setup() {
   parar();
   delay(3000);
 
-  WiFi.softAP(ssid, password);
-  Serial.println("WiFi criado!");
+  # WiFi.softAP(ssid, password);
+  # Serial.println("WiFi criado!");
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
 
   server.on("/", HTTP_GET, [](){
     server.send(200, "text/html", paginaHTML());
