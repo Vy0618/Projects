@@ -7,13 +7,12 @@
 Servo esc1;
 Servo esc2;
 
-int potencia = 30;
+int potencia1 = 30;
+int potencia2 = 30;
 int micro1Atual = 1000;
 int micro2Atual = 1000;
 
-// Quantos microsegundos por passo (menor = rampa mais suave/lenta)
 #define PASSO 15
-// Intervalo entre passos em ms
 #define INTERVALO_MS 20
 
 int pctParaMicro(int pct) {
@@ -21,7 +20,6 @@ int pctParaMicro(int pct) {
   return map(pct, 0, 100, 1000, 2000);
 }
 
-// Aplica rampa gradual para esc1 e esc2 simultaneamente
 void rampa(int alvo1, int alvo2) {
   while (micro1Atual != alvo1 || micro2Atual != alvo2) {
     if (micro1Atual < alvo1) micro1Atual = min(micro1Atual + PASSO, alvo1);
@@ -36,19 +34,61 @@ void rampa(int alvo1, int alvo2) {
   }
 }
 
-void parar()    { rampa(1000, 1000); }
-void avancar()  { rampa(pctParaMicro(potencia), pctParaMicro(potencia)); }
-void esquerda() { rampa(pctParaMicro(potencia * 0.5), pctParaMicro(potencia)); }
-void direita()  { rampa(pctParaMicro(potencia), pctParaMicro(potencia * 0.5)); }
-void girarEsq() { rampa(1000, pctParaMicro(potencia)); }
-void girarDir() { rampa(pctParaMicro(potencia), 1000); }
+void parar() {
+    rampa(1000, 1000);
+}
+
+void avancar() {
+    rampa(
+        pctParaMicro(potencia2), // esquerdo
+        pctParaMicro(potencia1)  // direito
+    );
+}
+
+void esquerda() {
+    rampa(
+        pctParaMicro(potencia2), // esquerdo ON
+        1000                     // direito OFF
+    );
+}
+
+void direita() {
+    rampa(
+        1000,                    // esquerdo OFF
+        pctParaMicro(potencia1)  // direito ON
+    );
+}
+
+void girarEsq() {
+    rampa(
+        1000,
+        pctParaMicro(potencia1)
+    );
+}
+
+void girarDir() {
+    rampa(
+        pctParaMicro(potencia2),
+        1000
+    );
+}
 
 void lerPotencia(String linha) {
-  if (linha.startsWith("P") && linha.length() == 4) {
-    int val = linha.substring(1).toInt();
-    potencia = constrain(val, 0, 100);
-    Serial.print("PWR_OK:");
-    Serial.println(potencia);
+  // Formato "P1045" → motor 1, 45%
+  // Formato "P2070" → motor 2, 70%
+  if (linha.startsWith("P") && linha.length() == 5) {
+    int motor = linha.substring(1, 2).toInt();
+    int val   = linha.substring(2).toInt();
+    val = constrain(val, 0, 100);
+    if (motor == 1) {
+      potencia1 = val;
+      Serial.print("PWR_OK:1:");
+      Serial.println(potencia1);
+    } else if (motor == 2) {
+      potencia2 = val;
+      Serial.print("PWR_OK:2:");
+      Serial.println(potencia2);
+    }
   }
 }
 
