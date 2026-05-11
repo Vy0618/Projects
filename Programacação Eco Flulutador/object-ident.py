@@ -51,4 +51,6 @@ if __name__ == "__main__":
         result, objectInfo = getObjects(img,0.45,0.2, objects = ['bottle'])
         #print(objectInfo)
         cv2.imshow("Output",img)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
         cv2.waitKey(1)
