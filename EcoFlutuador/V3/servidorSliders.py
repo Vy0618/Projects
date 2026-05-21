@@ -149,11 +149,9 @@ def index():
 
   <div style="margin-top:10px;">
     <button onclick="mover('w')">Frente</button><br>
-    <button onclick="mover('a')">Esq</button>
     <button onclick="mover('s')">Parar</button>
-    <button onclick="mover('d')">Dir</button><br>
-    <button onclick="mover('q')">Gir E</button>
-    <button onclick="mover('e')">Gir D</button>
+    <button onclick="mover('a')">Gir E</button>
+    <button onclick="mover('d')">Gir D</button>
   </div>
 
   <div id="log">Aguardando comandos...</div>
